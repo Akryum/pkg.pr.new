@@ -1,8 +1,4 @@
-import {
-  Comment,
-  isPullRequest,
-  isWhitelisted,
-} from "@pkg-pr-new/utils";
+import { Comment, isPullRequest, isWhitelisted } from "@pkg-pr-new/utils";
 import { randomUUID } from "uncrypto";
 import { setItemStream, useTemplatesBucket } from "~/utils/bucket";
 import { useOctokitInstallation } from "~/utils/octokit";
@@ -233,46 +229,58 @@ export default eventHandler(async (event) => {
     );
 
     if (comment !== "off") {
-      if (comment === "update" && prevComment!) {
-        await installation.request(
-          "PATCH /repos/{owner}/{repo}/issues/comments/{comment_id}",
-          {
-            owner: workflowData.owner,
-            repo: workflowData.repo,
-            comment_id: prevComment.id,
-            body: generatePullRequestPublishMessage(
-              origin,
-              templatesHtmlMap,
-              packagesWithoutPrefix,
-              workflowData,
-              compact,
-              onlyTemplates,
-              checkRunUrl,
-              packageManager,
-              "ref",
-            ),
-          },
-        );
-      } else {
-        await installation.request(
-          "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
-          {
-            owner: workflowData.owner,
-            repo: workflowData.repo,
-            issue_number: Number(workflowData.ref),
-            body: generatePullRequestPublishMessage(
-              origin,
-              templatesHtmlMap,
-              packagesWithoutPrefix,
-              workflowData,
-              compact,
-              onlyTemplates,
-              checkRunUrl,
-              packageManager,
-              comment === "update" ? "ref" : "sha",
-            ),
-          },
-        );
+      const { data: { permissions } } = await installation.request(
+        "GET /repos/{owner}/{repo}/installation",
+        {
+          owner: workflowData.owner,
+          repo: workflowData.repo,
+        }
+      );
+
+      try {
+        if (comment === "update" && prevComment!) {
+          await installation.request(
+            "PATCH /repos/{owner}/{repo}/issues/comments/{comment_id}",
+            {
+              owner: workflowData.owner,
+              repo: workflowData.repo,
+              comment_id: prevComment.id,
+              body: generatePullRequestPublishMessage(
+                origin,
+                templatesHtmlMap,
+                packagesWithoutPrefix,
+                workflowData,
+                compact,
+                onlyTemplates,
+                checkRunUrl,
+                packageManager,
+                "ref",
+              ),
+            },
+          );
+        } else {
+          await installation.request(
+            "POST /repos/{owner}/{repo}/issues/{issue_number}/comments",
+            {
+              owner: workflowData.owner,
+              repo: workflowData.repo,
+              issue_number: Number(workflowData.ref),
+              body: generatePullRequestPublishMessage(
+                origin,
+                templatesHtmlMap,
+                packagesWithoutPrefix,
+                workflowData,
+                compact,
+                onlyTemplates,
+                checkRunUrl,
+                packageManager,
+                comment === "update" ? "ref" : "sha",
+              ),
+            },
+          );
+        }
+      } catch (e) {
+        console.error("failed to create/update comment", e, permissions);
       }
     }
   }

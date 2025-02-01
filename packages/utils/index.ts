@@ -1,7 +1,7 @@
 import type { PackageManifest } from "query-registry";
 
 const githubUrlRegex =
-  /(?:git\+)?https?:\/\/github\.com\/([^\/]+)\/([^\/]+)\.git/; // TODO: Don't trust this, it's chatgbd :)
+  /^(?:git\+)?https?:\/\/github\.com\/([^\/]+)\/([^\/]+)\.git$/;
 
 export function extractOwnerAndRepo(
   repositoryUrl: string,
@@ -36,8 +36,6 @@ export function isPullRequest(ref: string) {
 
 export type Comment = "off" | "create" | "update";
 export type PackageManager = "npm" | "pnpm" | "yarn" | "bun";
-
-
 
 const whitelist =
   "https://raw.githubusercontent.com/stackblitz-labs/pkg.pr.new/main/.whitelist";
